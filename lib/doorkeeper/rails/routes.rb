@@ -15,6 +15,17 @@ module Doorkeeper
         ActionDispatch::Routing::Mapper.send :include, Doorkeeper::Rails::Routes::Helper
       end
 
+      def self.warn_if_using_mount_method!
+        paths = ::Rails.application.config.paths["config/routes"] ||
+          ::Rails.application.config.paths["config/routes.rb"]
+
+        paths.each do |path|
+          if File.read(::Rails.root.join(path)) =~ %r[mount Doorkeeper::Engine]
+            warn "\n[DOORKEEPER] `mount Doorkeeper::Engine` is not being used anymore. Please replace it with `use_doorkeeper` in your #{path} file\n"
+          end
+        end
+      end
+
       attr_accessor :routes
 
       def initialize(routes, &options)
@@ -28,6 +39,7 @@ module Doorkeeper
           map_route(:tokens, :token_routes)
           map_route(:applications, :application_routes)
           map_route(:authorized_applications, :authorized_applications_routes)
+          map_route(:token_info, :token_info_routes)
         end
       end
 
@@ -39,18 +51,31 @@ module Doorkeeper
       end
 
       def authorization_routes(mapping)
-        routes.scope :controller => mapping[:controllers] do
-          routes.match 'authorize', :via => :get,    :action => :new, :as => mapping[:as]
-          routes.match 'authorize', :via => :post,   :action => :create, :as => mapping[:as]
-          routes.match 'authorize', :via => :delete, :action => :destroy, :as => mapping[:as]
-        end
+          routes.resource(
+            :authorization, :path => 'authorize',
+            :only => [:create, :update, :destroy],
+            :as => mapping[:as],
+            :controller => mapping[:controllers]
+          ) do
+            routes.get '/:code', :action => :show, :on => :member
+            routes.get '/', :action => :new, :on => :member
+          end
       end
 
       def token_routes(mapping)
-        routes.scope :controller => mapping[:controllers] do
-          routes.match 'token', :via => :post, :action => :create, :as => mapping[:as]
-          routes.match 'tokeninfo', :via => :get, :action => :tokeninfo, :controller => mapping[:controllers]
-        end
+        routes.resource(
+          :token, :path => 'token',
+          :only => [:create], :as => mapping[:as],
+          :controller => mapping[:controllers]
+        )
+      end
+
+      def token_info_routes(mapping)
+        routes.resource(
+          :token_info, :path => 'token/info',
+          :only => [:show], :as => mapping[:as],
+          :controller => mapping[:controllers]
+        )
       end
 
       def application_routes(mapping)
