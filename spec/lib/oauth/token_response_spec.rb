@@ -3,7 +3,7 @@ require 'doorkeeper/oauth/token_response'
 
 module Doorkeeper::OAuth
   describe TokenResponse do
-    subject { TokenResponse.new(stub.as_null_object) }
+    subject { TokenResponse.new(double.as_null_object) }
 
     it 'includes access token response headers' do
       headers = subject.headers
@@ -17,9 +17,10 @@ module Doorkeeper::OAuth
 
     describe '.body' do
       let(:access_token) do
-        mock :access_token, {
+        double :access_token, {
           :token => 'some-token',
           :expires_in => '3600',
+          :expires_in_seconds => '300',
           :scopes_string => 'two scopes',
           :refresh_token => 'some-refresh-token',
           :token_type => 'bearer'
@@ -36,8 +37,10 @@ module Doorkeeper::OAuth
         subject['token_type'].should == 'bearer'
       end
 
+      # expires_in_seconds is returned as `expires_in` in order to match
+      # the OAuth spec (section 4.2.2)
       it 'includes :expires_in' do
-        subject['expires_in'].should == '3600'
+        subject['expires_in'].should == '300'
       end
 
       it 'includes :scope' do
@@ -46,6 +49,32 @@ module Doorkeeper::OAuth
 
       it 'includes :refresh_token' do
         subject['refresh_token'].should == 'some-refresh-token'
+      end
+    end
+
+    describe '.body filters out empty values' do
+      let(:access_token) do
+        double :access_token, {
+          :token => 'some-token',
+          :expires_in_seconds => '',
+          :scopes_string => '',
+          :refresh_token => '',
+          :token_type => 'bearer'
+        }
+      end
+
+      subject { TokenResponse.new(access_token).body }
+
+      it 'includes :expires_in' do
+        subject['expires_in'].should be_nil
+      end
+
+      it 'includes :scope' do
+        subject['scope'].should be_nil
+      end
+
+      it 'includes :refresh_token' do
+        subject['refresh_token'].should be_nil
       end
     end
   end

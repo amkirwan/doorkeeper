@@ -10,12 +10,14 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/applicake/doorkeeper"
   s.summary     = "Doorkeeper is an OAuth 2 provider for Rails."
   s.description = "Doorkeeper is an OAuth 2 provider for Rails."
+  s.license     = 'MIT'
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- test/*`.split("\n")
   s.require_paths = ["lib"]
 
   s.add_dependency "railties", ">= 3.1"
+  s.add_dependency "jquery-rails", ">= 2.0.2"
 
   s.add_development_dependency "sqlite3", "~> 1.3.5"
   s.add_development_dependency "rspec-rails", ">= 2.11.4"

@@ -11,6 +11,10 @@ module Doorkeeper
 
     before_validation :generate_uid, :generate_secret, :on => :create
 
+    if ::Rails.version.to_i < 4 || defined?(ProtectedAttributes)
+      attr_accessible :name, :redirect_uri
+    end
+
     def self.model_name
       ActiveModel::Name.new(self, Doorkeeper, 'Application')
     end
@@ -26,11 +30,11 @@ module Doorkeeper
     private
 
     def generate_uid
-      self.uid = UniqueToken.generate
+      self.uid ||= UniqueToken.generate
     end
 
     def generate_secret
-      self.secret = UniqueToken.generate
+      self.secret ||= UniqueToken.generate
     end
   end
 end
