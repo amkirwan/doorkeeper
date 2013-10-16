@@ -75,7 +75,9 @@ module Doorkeeper
           :token_info, :path => 'token/info',
           :only => [:show], :as => mapping[:as],
           :controller => mapping[:controllers]
-        )
+        ) do
+          routes.match '/', to: 'doorkeeper/token_info#show', via: :options
+        end
       end
 
       def application_routes(mapping)
